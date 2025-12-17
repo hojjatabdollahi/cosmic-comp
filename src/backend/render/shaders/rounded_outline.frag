@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 uniform float alpha;
 #if defined(DEBUG_FLAGS)
 uniform float tint;
@@ -24,7 +24,15 @@ void main() {
     vec4 mix_color;
 
     float distance = rounded_box(location - center, (size / 2.0) - (thickness / 2.0), radius);
-    float smoothedAlpha = 1.0 - smoothstep(-0.5, 0.5, abs(distance) - (thickness / 2.0));
+    // This outline is usually rendered behind windows. If we antialias both sides of the stroke
+    // symmetrically, the inner edge blends with the background and looks like a 1px "gap" next
+    // to the window. Use asymmetric AA:
+    // - crisp/opaque at the inner edge (touching the window)
+    // - antialiased at the outer edge
+    float half_t = thickness / 2.0;
+    float inner = smoothstep(-half_t - 0.5, -half_t, distance);
+    float outer = 1.0 - smoothstep(half_t, half_t + 0.5, distance);
+    float smoothedAlpha = clamp(inner * outer, 0.0, 1.0);
 
     mix_color = mix(vec4(0.0, 0.0, 0.0, 0.0), vec4(color, alpha), smoothedAlpha);
     
