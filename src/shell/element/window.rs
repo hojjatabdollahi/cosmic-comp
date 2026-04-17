@@ -828,11 +828,11 @@ impl Program for CosmicWindowInternal {
 
     fn background_color(&self, theme: &cosmic::Theme) -> Color {
         if self.window.is_maximized(false) {
-            if theme.cosmic().frosted_windows {
-                theme.cosmic().background.base.into()
-            } else {
-                theme.into_opaque().cosmic().background.base.into()
-            }
+            theme
+                .cosmic()
+                .background(theme.cosmic().frosted_windows)
+                .base
+                .into()
         } else {
             Color::TRANSPARENT
         }

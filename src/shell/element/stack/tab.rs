@@ -64,7 +64,11 @@ impl From<TabBackgroundTheme> for theme::Container<'_> {
                     icon_color: Some(Color::from(theme.cosmic().accent_text_color())),
                     text_color: Some(Color::from(theme.cosmic().accent_text_color())),
                     background: Some(Background::Color({
-                        let mut color = theme.cosmic().primary.component.selected;
+                        let mut color = theme
+                            .cosmic()
+                            .primary(theme.cosmic().frosted_windows)
+                            .component
+                            .selected;
                         if theme.cosmic().frosted_windows {
                             color.alpha = theme.cosmic().frosted.alpha();
                         }
@@ -84,7 +88,11 @@ impl From<TabBackgroundTheme> for theme::Container<'_> {
                     icon_color: None,
                     text_color: None,
                     background: Some(Background::Color({
-                        let mut color = theme.cosmic().primary.component.base;
+                        let mut color = theme
+                            .cosmic()
+                            .primary(theme.cosmic().frosted_windows)
+                            .component
+                            .base;
                         if theme.cosmic().frosted_windows {
                             color.alpha = theme.cosmic().frosted.alpha();
                         }

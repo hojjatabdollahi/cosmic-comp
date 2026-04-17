@@ -1378,23 +1378,31 @@ impl Decorations<CosmicStackInternal, Message> for DefaultDecorations {
             .apply(iced_widget::container)
             .align_y(Alignment::Center)
             .class(theme::Container::custom(move |theme| {
-                let mut cosmic_theme = theme.cosmic();
-                let _theme;
-                if !cosmic_theme.frosted_windows {
-                    _theme = theme.into_opaque();
-                    cosmic_theme = _theme.cosmic();
-                }
+                let cosmic_theme = theme.cosmic();
 
-                let background = if group_focused {
+                let mut background = if group_focused {
                     cosmic_theme.accent_color()
                 } else {
                     cosmic_theme.primary_container_color()
                 };
+                if cosmic_theme.frosted_windows {
+                    background.alpha = cosmic_theme.frosted.alpha();
+                }
 
                 iced_widget::container::Style {
                     snap: true,
-                    icon_color: Some(cosmic_theme.background.on.into()),
-                    text_color: Some(cosmic_theme.background.on.into()),
+                    icon_color: Some(
+                        cosmic_theme
+                            .background(cosmic_theme.frosted_windows)
+                            .on
+                            .into(),
+                    ),
+                    text_color: Some(
+                        cosmic_theme
+                            .background(cosmic_theme.frosted_windows)
+                            .on
+                            .into(),
+                    ),
                     background: Some(Background::Color(background.into())),
                     border: Border {
                         radius,
