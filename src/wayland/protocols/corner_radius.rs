@@ -655,6 +655,7 @@ fn pad_rect(
 }
 
 fn layer_radius_hook<D: 'static>(_state: &mut D, _dh: &DisplayHandle, surface: &WlSurface) {
+    let bbox = bbox_from_surface_tree(surface, Point::default());
     with_states(surface, |surface_data| {
         let corners = *surface_data
             .cached_state
@@ -664,12 +665,8 @@ fn layer_radius_hook<D: 'static>(_state: &mut D, _dh: &DisplayHandle, surface: &
             .cached_state
             .get::<CacheablePadding>()
             .pending();
-        let bbox = bbox_from_surface_tree(surface, Point::default());
-        let Some(padded_box) = padding
-            .0
-            .as_ref()
-            .and_then(|padding| pad_rect(bbox, padding))
-        else {
+        let empty = Padding::default();
+        let Some(padded_box) = pad_rect(bbox, padding.0.as_ref().unwrap_or(&empty)) else {
             if let Some(hook) = surface_data.data_map.get::<LayerHookId>() {
                 let hook_ref = hook.lock().unwrap();
                 if let Some((_, obj)) = hook_ref.as_ref()
@@ -729,7 +726,7 @@ pub struct Corners {
     pub bottom_left: u32,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Padding {
     pub top: i32,
     pub right: i32,
