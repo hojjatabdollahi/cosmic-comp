@@ -115,6 +115,7 @@ impl State {
             &self.common.display_handle,
             None,
             std::iter::empty::<(OsString, OsString)>(),
+            ["-enable-ei-portal"],
             true,
             Stdio::null(),
             Stdio::null(),
