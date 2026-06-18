@@ -138,6 +138,15 @@ impl Devices {
             .contains_key(&(backend_id.clone(), device.id()))
     }
 
+    /// Whether any physical keyboard device is currently present on the seat.
+    pub fn has_keyboard(&self) -> bool {
+        self.capabilities
+            .borrow()
+            .values()
+            .flatten()
+            .any(|c| *c == DeviceCapability::Keyboard)
+    }
+
     pub fn remove_device<D: Device>(
         &self,
         device: &D,
@@ -200,6 +209,11 @@ pub struct PointerConstraintHint(pub Mutex<Option<(WlSurface, Point<f64, Logical
 #[derive(Default)]
 pub struct LastModifierChange(pub Mutex<(HashMap<InputBackendId, Serial>, Option<Serial>)>);
 
+/// Whether the most recent focus-causing input on this seat was a touch event.
+/// Used to gate on-screen-keyboard auto-show.
+#[derive(Default)]
+pub struct LastInputTouch(std::cell::Cell<bool>);
+
 pub fn create_seat(
     dh: &DisplayHandle,
     seat_state: &mut SeatState<State>,
@@ -215,6 +229,7 @@ pub fn create_seat(
     userdata.insert_if_missing(SupressedButtons::default);
     userdata.insert_if_missing(ModifiersShortcutQueue::default);
     userdata.insert_if_missing(LastModifierChange::default);
+    userdata.insert_if_missing(LastInputTouch::default);
     userdata.insert_if_missing_threadsafe(SeatMoveGrabState::default);
     userdata.insert_if_missing_threadsafe(SeatMenuGrabState::default);
     userdata.insert_if_missing_threadsafe(CursorState::default);
@@ -276,6 +291,8 @@ pub trait SeatExt {
     fn set_last_modifier_change(&self, backend_id: &InputBackendId, serial: Serial);
     fn pointer_constraint_hint(&self) -> Option<(WlSurface, Point<f64, Logical>)>;
     fn set_pointer_constraint_hint(&self, hint: Option<(WlSurface, Point<f64, Logical>)>);
+    fn last_input_was_touch(&self) -> bool;
+    fn set_last_input_touch(&self, touch: bool);
 
     fn cursor_geometry(
         &self,
@@ -337,6 +354,19 @@ impl SeatExt for Seat<State> {
 
     fn devices(&self) -> &Devices {
         self.user_data().get::<Devices>().unwrap()
+    }
+
+    fn last_input_was_touch(&self) -> bool {
+        self.user_data()
+            .get::<LastInputTouch>()
+            .map(|t| t.0.get())
+            .unwrap_or(false)
+    }
+
+    fn set_last_input_touch(&self, touch: bool) {
+        if let Some(t) = self.user_data().get::<LastInputTouch>() {
+            t.0.set(touch);
+        }
     }
 
     fn supressed_keys(&self) -> &SupressedKeys {

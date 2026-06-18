@@ -102,6 +102,8 @@ pub struct CosmicCompConfig {
     /// Hide the cursor after this many seconds of pointer inactivity (None disables)
     pub cursor_hide_timeout: Option<u32>,
     pub activation_policy: ActivationPolicy,
+    /// When to allow an on-screen keyboard (input method) to be shown.
+    pub on_screen_keyboard: OnScreenKeyboardMode,
 }
 
 impl Default for CosmicCompConfig {
@@ -140,8 +142,22 @@ impl Default for CosmicCompConfig {
             appearance_settings: AppearanceConfig::default(),
             cursor_hide_timeout: None,
             activation_policy: ActivationPolicy::default(),
+            on_screen_keyboard: OnScreenKeyboardMode::default(),
         }
     }
+}
+
+/// Policy for showing an on-screen keyboard when a text field is focused.
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Deserialize, Serialize)]
+pub enum OnScreenKeyboardMode {
+    /// Show only when focus came from a touch event, or no hardware keyboard is
+    /// present. Mirrors the typical desktop behavior.
+    #[default]
+    Auto,
+    /// Always allow the on-screen keyboard to show on text-field focus.
+    Always,
+    /// Never show the on-screen keyboard automatically.
+    Never,
 }
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Deserialize, Serialize)]

@@ -771,6 +771,8 @@ impl State {
                 };
                 self.common.idle_notifier_state.notify_activity(&seat);
                 notify_cursor_activity(self, &seat);
+                // Pointer-driven focus should not auto-show the on-screen keyboard.
+                seat.set_last_input_touch(false);
 
                 let current_focus = seat.get_keyboard().unwrap().current_focus();
                 let shortcuts_inhibited = current_focus.as_ref().is_some_and(|f| {
@@ -1369,6 +1371,9 @@ impl State {
 
                     std::mem::drop(shell);
 
+                    // Touch-driven focus is allowed to auto-show the keyboard.
+                    seat.set_last_input_touch(true);
+
                     let serial = SERIAL_COUNTER.next_serial();
                     let touch = seat.get_touch().unwrap();
                     touch.down(
@@ -1381,6 +1386,8 @@ impl State {
                             time: event.time_msec(),
                         },
                     );
+                    // Touch may focus a text field without going through set_focus.
+                    crate::shell::focus::update_input_method_inhibit(self, &seat);
                 }
             }
             InputEvent::TouchMotion { event, .. } => {

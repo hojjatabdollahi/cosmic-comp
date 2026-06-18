@@ -183,6 +183,26 @@ impl ActiveFocus {
     }
 }
 
+/// Gate whether the on-screen keyboard (input method) may auto-show on the next
+/// text-input activation, per the configured policy, the last input device, and
+/// hardware keyboard presence. Evaluated on focus and touch input.
+pub fn update_input_method_inhibit(state: &State, seat: &Seat<State>) {
+    use cosmic_comp_config::OnScreenKeyboardMode;
+    use smithay::wayland::input_method::InputMethodHandle;
+
+    let Some(im) = seat.user_data().get::<InputMethodHandle>() else {
+        return;
+    };
+    let allow = match state.common.config.cosmic_conf.on_screen_keyboard {
+        OnScreenKeyboardMode::Never => false,
+        OnScreenKeyboardMode::Always => true,
+        OnScreenKeyboardMode::Auto => {
+            seat.last_input_was_touch() || !seat.devices().has_keyboard()
+        }
+    };
+    im.set_inhibited(!allow);
+}
+
 impl Shell {
     /// Set the keyboard focus to the given target
     /// Note: `update_cursor` is used to determine whether to update the pointer location if cursor_follows_focus is enabled
@@ -208,6 +228,8 @@ impl Shell {
         }
 
         update_focus_state(seat, target, state, serial, update_cursor);
+
+        update_input_method_inhibit(state, seat);
 
         state.common.shell.write().update_active();
     }
