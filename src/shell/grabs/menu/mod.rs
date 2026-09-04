@@ -745,7 +745,7 @@ impl TouchGrab<State> for MenuGrab {
         _focus: Option<(PointerFocusTarget, Point<f64, Logical>)>,
         event: &TouchDownEvent,
     ) {
-        {
+        let hit = {
             let mut guard = self.elements.lock().unwrap();
             let elements = &mut *guard;
             let event_location = if let Some(output) = self.screen_space_relative.as_ref() {
@@ -781,9 +781,17 @@ impl TouchGrab<State> for MenuGrab {
                     TouchTarget::down(&element.iced, &self.seat, data, &new_event);
                     element.touch_entered = Some(event.slot);
                 }
+                true
+            } else {
+                false
             }
+        };
+        if hit {
+            handle.down(data, None, event);
+        } else {
+            // Touching outside the menu dismisses it, like a pointer press does.
+            handle.unset_grab(self, data);
         }
-        handle.down(data, None, event);
     }
 
     fn up(
@@ -792,17 +800,25 @@ impl TouchGrab<State> for MenuGrab {
         handle: &mut TouchInnerHandle<'_, State>,
         event: &TouchUpEvent,
     ) {
-        {
+        let selected = {
             let elements = self.elements.lock().unwrap();
+            let mut selected = false;
             for element in elements.iter().filter(|elem| {
                 elem.touch_entered
                     .as_ref()
                     .is_some_and(|slot| *slot == event.slot)
             }) {
                 TouchTarget::up(&element.iced, &self.seat, data, event);
+                selected = true;
             }
+            selected
+        };
+        if selected {
+            handle.unset_grab(self, data);
+        } else {
+            // Lifting the finger that opened the menu (e.g. a long press) keeps it open.
+            handle.up(data, event);
         }
-        handle.unset_grab(self, data);
     }
 
     fn motion(

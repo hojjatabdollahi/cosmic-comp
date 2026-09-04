@@ -3628,11 +3628,8 @@ impl Shell {
         evlh: &LoopHandle<'static, State>,
     ) -> Option<(MenuGrab, Focus)> {
         let serial = serial.into();
-        let Some(GrabStartData::Pointer(start_data)) =
-            check_grab_preconditions(seat, serial, is_client_initiated.then_some(surface))
-        else {
-            return None; // TODO: an application can send a menu request for a touch event
-        };
+        let start_data =
+            check_grab_preconditions(seat, serial, is_client_initiated.then_some(surface))?;
 
         let items_for_element = |mapped: &CosmicMapped,
                                  is_tiled: bool,
@@ -3738,7 +3735,7 @@ impl Shell {
         let mut theme = self.theme.clone();
         theme.transparent = theme.cosmic().frosted_windows;
         let grab = MenuGrab::new(
-            GrabStartData::Pointer(start_data),
+            start_data,
             seat,
             menu_items,
             global_position,

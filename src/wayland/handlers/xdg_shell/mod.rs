@@ -436,9 +436,18 @@ impl XdgShellHandler for State {
         );
         if let Some((grab, focus)) = res {
             std::mem::drop(shell);
-            seat.get_pointer()
-                .unwrap()
-                .set_grab(self, grab, serial, focus)
+            match grab.grab_type() {
+                GrabType::Touch => seat.get_touch().unwrap().set_grab(self, grab, serial),
+                GrabType::Pointer => seat
+                    .get_pointer()
+                    .unwrap()
+                    .set_grab(self, grab, serial, focus),
+                GrabType::TabletTool => seat
+                    .tablet_seat()
+                    .get_tool(grab.tool().unwrap())
+                    .unwrap()
+                    .set_grab(self, grab, InputTime::now(), serial, focus),
+            }
         }
     }
 }
